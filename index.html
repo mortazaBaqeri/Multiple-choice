@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multiple Choice Quiz</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .question-container {
+        background-color: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .options {
+        margin-left: 20px;
+      }
+      .option {
+        margin: 10px 0;
+        padding: 8px 0 8px 0;
+        border-radius: 4px;
+        transition: background 0.2s, box-shadow 0.2s;
+      }
+      .option.selected {
+        background: #c6defc;
+        box-shadow: 0 0 0 4px #c6defc;
+      }
+      .option input[type="radio"] {
+        accent-color: #1976d2;
+      }
+      button {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      .result {
+        margin-top: 20px;
+        padding: 10px;
+        border-radius: 4px;
+      }
+      .correct {
+        background-color: #dff0d8;
+        color: #3c763d;
+      }
+      .incorrect {
+        background-color: #f2dede;
+        color: #a94442;
+      }
+      .navigation {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+      }
+      .progress {
+        margin-bottom: 20px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Multiple Choice Quiz</h1>
+    <div class="progress">
+      Question <span id="current-question">1</span> of
+      <span id="total-questions">0</span>
+    </div>
+    <div id="quiz-container"></div>
+    <div class="navigation">
+      <button onclick="previousQuestion()" id="prev-btn">Previous</button>
+      <button onclick="nextQuestion()" id="next-btn">Next</button>
+    </div>
+    <div id="score-container" style="display: none">
+      <h2>Quiz Results</h2>
+      <p>
+        Your score: <span id="score">0</span> out of <span id="total">0</span>
+      </p>
+    </div>
+
+    <script>
+      // Questions data directly embedded in the JavaScript
+      const quizData = {
+        questions: [
+          {
+            question:
+              "Hvilket begrep er mest dekkende for å beskrive hva forskning er?",
+            options: [
+              "Presentasjon av innsamlede forskningsdata",
+              "Et eksperiment som viser til signifikante forskjeller",
+              "Prosess som gjennom systematisk arbeid kan frembringe ny kunnskap og viten",
+            ],
+            correct_answer:
+              "Prosess som gjennom systematisk arbeid kan frembringe ny kunnskap og viten",
+          },
+          {
+            question: "Taus kunnskap er:",
+            options: [
+              "Kunnskap som ingen har villet fortelle andre om på mange år",
+              "Hemmelig kunnskap som noen har, men som ikke må fortelles videre til andre",
+              "Erfaringsbaserte kunnskap man får i utøvelse av en aktivitet, et fag eller yrke og som ofte ikke lar seg forklare med ord.",
+            ],
+            correct_answer:
+              "Erfaringsbaserte kunnskap man får i utøvelse av en aktivitet, et fag eller yrke og som ofte ikke lar seg forklare med ord.",
+          },
+          {
+            question: "Ontologi er:",
+            options: [
+              "Læren om det som objektivt eksisterer for oss mennesker studert ved hjelp av våre fem sanser",
+              "Læren om hvordan man bør kritisk forholde seg til ulike vitenskapelige metoder",
+              "Læren om hvorledes ulike virkelighetsoppfatninger kan påvirke oss mennesker",
+            ],
+            correct_answer:
+              "Læren om det som objektivt eksisterer for oss mennesker studert ved hjelp av våre fem sanser",
+          },
+          {
+            question: "Epistemologi er:",
+            options: [
+              "Læren om hvordan kunnskap i fagfelter blir skapt",
+              "Læren om hvordan enkeltpersoners hverdagsfortellinger eller epistler kan gi oss viktig kunnskap om praksisutøvelse",
+              "Læren om hvordan manges liknende fortellinger kan generaliseres til populasjonen",
+            ],
+            correct_answer: "Læren om hvordan kunnskap i fagfelter blir skapt",
+          },
+          {
+            question: "Generalisering betyr:",
+            options: [
+              "At repeterende, sansbare enkeltobservasjoner av noe, med sannsynlighet kan være allmenngyldige",
+              "At noen har så sterke meninger om et fenomen, at disse undertrykker motsatte resultater som forskere har fått",
+              "At man uttrykker seg for «sterkt» om sammenhenger mellom fenomener",
+            ],
+            correct_answer:
+              "At repeterende, sansbare enkeltobservasjoner av noe, med sannsynlighet kan være allmenngyldige",
+          },
+          {
+            question: "En hypotese er:",
+            options: [
+              "Noe man teoretiserer om, men som man vet ikke vil stemme i praksis",
+              "En fremsatt teori om mulige sammenhenger eller forskjeller mellom fenomener som lar seg teste ut i praksis ved å samle inn kvantifiserbare data",
+              "En setning som ikke har rot i virkeligheten",
+            ],
+            correct_answer:
+              "En fremsatt teori om mulige sammenhenger eller forskjeller mellom fenomener som lar seg teste ut i praksis ved å samle inn kvantifiserbare data",
+          },
+          {
+            question: "Kvalitativ forskningsmetode er:",
+            options: [
+              "At man selv, helt alene, samler inn og analyserer på best mulig måte følelsesladet informasjon om enkeltpersoner",
+              "Ulike former for systematisk innsamling, bearbeiding og analyse av materiale fra samtaler med, observasjoner av, eller tekst produsert av mennesker",
+              "Forskningsmetode som er kvalitativt bedre enn andre forskningsmetoder",
+            ],
+            correct_answer:
+              "Ulike former for systematisk innsamling, bearbeiding og analyse av materiale fra samtaler med, observasjoner av, eller tekst produsert av mennesker",
+          },
+          {
+            question: "Subjektivitet i forskning betyr:",
+            options: [
+              "At forskerens egen bakgrunn, faglige ståsted og tolkninger av de innsamlete funn, er gjort synlig for leserne av forskningsrapporten",
+              "At man i kvalitativ forskning kun studerer og konkluderer på bakgrunn av informasjon innhentet fra ett individ",
+              "At konklusjonen man trekker i kvalitativ forskning ikke er troverdig fordi den kun er basert på forskerens egne meninger",
+            ],
+            correct_answer:
+              "At forskerens egen bakgrunn, faglige ståsted og tolkninger av de innsamlete funn, er gjort synlig for leserne av forskningsrapporten",
+          },
+          {
+            question: "Hvilket utsagn betegner Positivisme?",
+            options: [
+              "At man må ha en positiv holdning til alle former for vitenskapelig forskningsaktivitet",
+              "Studiens design har som hovedhensikt å avsløre at positive utfall av ulike behandlingsformer neppe kan være sanne til evig tid",
+              "For å oppnå sikker kunnskap om fenomener, må man utføre kvantifiserbare datainnsamlinger og utelukkende bruke menneskers objektive og verdinøytrale sanseerfaring i fortolkningen av disse.",
+            ],
+            correct_answer:
+              "For å oppnå sikker kunnskap om fenomener, må man utføre kvantifiserbare datainnsamlinger og utelukkende bruke menneskers objektive og verdinøytrale sanseerfaring i fortolkningen av disse.",
+          },
+          {
+            question: "Fenomenologi er:",
+            options: [
+              "Studie av hva som kan være logiske sammenhenger mellom fenomener som kan skje i menneskers livsløp",
+              "Studiet av fenomener og hvordan de fremtrer for oss og kan tolkes i et førstepersonsperspektiv",
+              "Studie av fenomener som forekommer i samfunnet",
+            ],
+            correct_answer:
+              "Studiet av fenomener og hvordan de fremtrer for oss og kan tolkes i et førstepersonsperspektiv",
+          },
+          {
+            question:
+              "Det kvalitative forskningsintervjuet er ofte rettet mot informantens livsverden. Hva betyr dette?",
+            options: [
+              "Verden som skildres av andre",
+              "Den subjektive verden som den enkelte person opplever det",
+              "Den objektive verden som den enkelte person opplever det",
+            ],
+            correct_answer:
+              "Den subjektive verden som den enkelte person opplever det",
+          },
+          {
+            question: "En meningsbærende enhet er:",
+            options: [
+              "Brokker av tekst som bringer med seg informasjon som bidrar til å besvare forskningsspørsmålet",
+              "Tekstbiter som leseren av en artikkel mener noe viktig om",
+              "Det forskeren egentlig mener om forskningsspørsmålet som undersøkes",
+            ],
+            correct_answer:
+              "Brokker av tekst som bringer med seg informasjon som bidrar til å besvare forskningsspørsmålet",
+          },
+          {
+            question: "Hva kjennetegner et fokusgruppeintervju?",
+            options: [
+              "Ulikheter mellom intervju personer",
+              "Interaksjoner mellom intervjupersoner",
+              "Fokus på samme tema",
+            ],
+            correct_answer: "Interaksjoner mellom intervjupersoner",
+          },
+          {
+            question:
+              "Hva legges det vekt på i utarbeidelsen av en intervjuguide?",
+            options: [
+              "Selvrefleksjon i intervjusituasjonen",
+              "Temaene vi ønsker informasjon om",
+              "Kontekst for studien og dens innvirkning på informanten",
+            ],
+            correct_answer: "Temaene vi ønsker informasjon om",
+          },
+          {
+            question:
+              "Hva er det viktigste redskapet for tolkning av data i en kvalitativ studie?",
+            options: ["Analyseprogrammer", "Forskeren selv", "Systematikken"],
+            correct_answer: "Forskeren selv",
+          },
+          {
+            question: "Hva er forforståelse?",
+            options: [
+              "Erfaringer, hypoteser, faglig perspektiv og den teoretiske referanserammen som forskeren har ved prosjektets innledning",
+              "Erfaringer og perspektiv på objektet underveis i datainnsamlingen",
+              "Forståelse for kontekst og objektivitet i forskningsspørsmålet",
+            ],
+            correct_answer:
+              "Erfaringer, hypoteser, faglig perspektiv og den teoretiske referanserammen som forskeren har ved prosjektets innledning",
+          },
+          {
+            question: "Hva er teoretisk referanseramme?",
+            options: [
+              "De brillene forskeren har når han/hun skriver ut intervju materialet",
+              "De brillene forskeren har når han/hun rekrutterer deltakere i studien",
+              "De brillene forskeren har når han/hun leser forskningsmateriale og identifiserer mønstre",
+            ],
+            correct_answer:
+              "De brillene forskeren har når han/hun leser forskningsmateriale og identifiserer mønstre",
+          },
+          {
+            question: "Valg av forskningsdesign tar utgangspunkt i:",
+            options: ["Forskningsspørsmålet", "Tilgang på data", "Utvalget"],
+            correct_answer: "Forskningsspørsmålet",
+          },
+          {
+            question: "Hva er et forskningsdesign?",
+            options: [
+              "En gitt studietype som betegner prosjektets gjennomførbarhet",
+              "En overordnet plan for hvordan man skal gå frem for å løse prosjektet med detaljerte planer for operasjonaliseringen",
+              "Et system bestående av en forskningsgruppe, et valgt forskningsprosjekt, en metode og en gjennomføringsplan inkludert en økonomisk overveielse",
+            ],
+            correct_answer:
+              "En overordnet plan for hvordan man skal gå frem for å løse prosjektet med detaljerte planer for operasjonaliseringen",
+          },
+          {
+            question: "Hensikten med randomisering er at:",
+            options: [
+              "Gruppene er valgt på bakgrunn av demografiske, spesifikke og konfunderende variabler",
+              "Gruppene er like med hensyn til demografiske, spesifikke og konfunderende variabler",
+              "Gruppene er mest mulig ulike med hensyn til demografiske, spesifikke og konfunderende variabler",
+            ],
+            correct_answer:
+              "Gruppene er like med hensyn til demografiske, spesifikke og konfunderende variabler",
+          },
+          {
+            question: "En kohortstudie kjennetegnes ved at:",
+            options: [
+              "Man følger en gitt gruppe over tid og observerer utkomme i henhold til eksposisjon",
+              "Man eksponerer en gruppe for et eksperiment og en gruppe for kontroll",
+              "Man observerer eksponeringsvariabler og registrerer deres egenskaper",
+            ],
+            correct_answer:
+              "Man følger en gitt gruppe over tid og observerer utkomme i henhold til eksposisjon",
+          },
+          {
+            question: "Hvordan defineres prevalens?",
+            options: [
+              "Andelen som har en diagnose/tilstand til enhver tid",
+              "Insidensen av en gitt tilstand",
+              "Andelen som får en diagnose/tilstand i en gitt tidsperiode",
+            ],
+            correct_answer:
+              "Andelen som har en diagnose/tilstand til enhver tid",
+          },
+          {
+            question: "Hva er «power»/styrke i statistisk sammenheng?",
+            options: [
+              "Sannsynligheten for å forkaste nullhypotesen når nullhypotesen er riktig",
+              "Sannsynligheten for å forkaste nullhypotesen når nullhypotesen er feil",
+              "Sannsynligheten for at man ikke kan forkaste nullhypotesen",
+            ],
+            correct_answer:
+              "Sannsynligheten for å forkaste nullhypotesen når nullhypotesen er feil",
+          },
+          {
+            question: "P-verdi betegner:",
+            options: [
+              "Sannsynligheten for at resultatene ikke beror på tilfeldigheter",
+              "Sannsynligheten for at resultatene beror på tilfeldigheter",
+              "Sannsynligheten for at hypotesetesten er adekvat",
+            ],
+            correct_answer:
+              "Sannsynligheten for at resultatene beror på tilfeldigheter",
+          },
+          {
+            question:
+              "Retrospektive studier kan være spesielt utsatt for en type bias, nemlig:",
+            options: [
+              "Eksposisjonsskjevhet (exposure bias)",
+              "Seleksjonsskjevhet (selection bias)",
+              "Publikasjonsskjevhet (publication bias)",
+              "Hukommelsesskjevhet (recall bias)",
+            ],
+            correct_answer: "Hukommelsesskjevhet (recall bias)",
+          },
+          {
+            question: "Hva slags variabel er BMI i utgangspunktet?",
+            options: [
+              "Kontinuerlig variabel",
+              "Kategorisk variabel",
+              "Dikotom variabel",
+            ],
+            correct_answer: "Kontinuerlig variabel",
+          },
+          {
+            question:
+              "Hva vil det si at et datasett med kontinuerlige data, er normalfordelt?",
+            options: [
+              "Gjennomsnittet har samme verdi som modus",
+              "Verdiene er normalt sett forskjøvet mot høyre eller venstre",
+              "Dataene er symmetrisk distribuert rundt et gjennomsnitt",
+            ],
+            correct_answer:
+              "Dataene er symmetrisk distribuert rundt et gjennomsnitt",
+          },
+          {
+            question: "En konfunderende variabel er:",
+            options: [
+              "En målbar variabel assosiert med utfallsvariabelen",
+              "En forklaringsvariabel som det alltid skal justeres for",
+              "Assosiert med både forklaringsvariabel og utfallsvariabel",
+            ],
+            correct_answer:
+              "Assosiert med både forklaringsvariabel og utfallsvariabel",
+          },
+          {
+            question: "Kategoriske data:",
+            options: [
+              "Kan kun inneha én av to mulige verdier",
+              "Er data som innehar en kategorisk gjennomsnittsverdi",
+              "Er data som bare kan anta et endelig antall verdier",
+            ],
+            correct_answer:
+              "Er data som bare kan anta et endelig antall verdier",
+          },
+          {
+            question: "Odds ratio viser:",
+            options: [
+              "Oddsen for at en hendelse inntreffer i kontrollgruppen",
+              "Ratioen mellom: odds for en hendelse i gruppe A delt på odds for en hendelse i gruppe B",
+              "Sannsynlighet for en hendelse",
+            ],
+            correct_answer:
+              "Ratioen mellom: odds for en hendelse i gruppe A delt på odds for en hendelse i gruppe B",
+          },
+          {
+            question: "Hvilken region har lavest antall keisersnitt?",
+            options: [
+              "Helse Nord",
+              "Helse Vest",
+              "Helse Sør-Øst",
+              "Helse Midt",
+            ],
+            correct_answer: "Helse Nord",
+          },
+          {
+            question:
+              "Hva var forekomsten (eller prevalensen) av tangforløsninger i Helse Sør-Øst?",
+            options: ["1,1/1000", "1,1 %", "0,11 %", "0,11/1000"],
+            correct_answer: "1,1 %",
+          },
+          {
+            question:
+              "Hva var relativ risiko for å bli tangforløst for kvinner som fødte i Helse Vest sammenliknet med kvinner som fødte i Helse Sør-Øst?",
+            options: [
+              "Tre ganger høyere",
+              "Dobbelt så høy",
+              "RR 34,5",
+              "RR 3,45",
+            ],
+            correct_answer: "Tre ganger høyere",
+          },
+          {
+            question:
+              "Du har hørt at Helse Vest har lavere andel keisersnitt enn resten av landet, og du vil undersøke dette nærmere ved hjelp av tabellen under. Hvilken påstand er riktig?",
+            options: [
+              "I Helse Vest blir 12,8 % av kvinnene forløst ved hjelp av keisersnitt mens andelen er 17,2 % i resten av landet",
+              "Forskjellen i andel keisersnitt mellom Helse Vest og resten av landet er ubetydelig",
+              "I Helse Vest blir 12,8 % av kvinnene forløst ved hjelp av keisersnitt mens andelen er 16,2 % i resten av landet",
+            ],
+            correct_answer:
+              "I Helse Vest blir 12,8 % av kvinnene forløst ved hjelp av keisersnitt mens andelen er 17,2 % i resten av landet",
+          },
+          {
+            question:
+              "Du planlegger å gjøre en studie hvor du vil undersøke om det er forskjeller i andelen av kvinner som blir forløst ved hjelp av keisersnitt i de ulike helseregionene i Norge. Hva er utfallsvariabelen (eller endepunktet)?",
+            options: [
+              "Balansen mellom helsegevinster og bivirkninger etter keisersnitt i de ulike helseregionene",
+              "Andel keisersnitt i de ulike helseregionene",
+              "Helseregion",
+              "Antall keisersnitt i de ulike helseregionene",
+            ],
+            correct_answer: "Andel keisersnitt i de ulike helseregionene",
+          },
+          {
+            question:
+              "5000 kvinner ble testet med KUB (Kombinert ultralyd og blodprøve) for om fosteret har Downs syndrom. Til sammen 30 av kvinnene testet positivt, det vil at barna deres hadde økt risiko for å ha Downs syndrom. De 30 kvinnene ble henvist til flere undersøkelser (ultralydundersøkelse og fostervannsprøve). De øvrige 4970 kvinnene hadde negativ test, og det ble ikke gjort flere undersøkelser av dem. Av de 30 kvinnene som ble henvist videre, var det fem som ikke ønsket videre undersøkelse. Av disse fem, var det en som fødte et barn med Downs syndrom og fire som fødte barn uten Downs syndrom. Av de 25 kvinnene som ble undersøkt videre, ble det funnet at åtte hadde fostre med Downs syndrom. Av de 4970 kvinnene som hadde negativ test, var det en som fødte et barn med Downs syndrom. Hva er prevalensen (forekomsten) av Downs syndrom i denne populasjonen?",
+            options: ["0,02%", "2%", "0,2%"],
+            correct_answer: "0,2%",
+          },
+          {
+            question: "Hva betyr det at data er anonymisert?",
+            options: [
+              "At data ikke kan spores.",
+              "At data er avidentifisert.",
+              "At det brukes pseudonym.",
+            ],
+            correct_answer: "At data ikke kan spores.",
+          },
+          {
+            question: "Hvem har ansvar for redelighet i forskning?",
+            options: ["Forskeren.", "Samfunnet.", "REK og NSD."],
+            correct_answer: "Forskeren.",
+          },
+          {
+            question: "Hvilket utsagn om kunnskapsbasert praksis er riktigst?",
+            options: [
+              "Kunnskapsbasert praksis er å bruke den beste vitenskapelig kunnskap som finnes sammen med pasientenes ønsker og behov og erfaringsbasert kunnskap.",
+              "Kunnskapsbasert praksis er en kombinasjon av erfaringsbasert kunnskap og litteratur.",
+              "Kunnskapsbasert praksis har som formål å evaluere brukerkunnskap og evidens.",
+            ],
+            correct_answer:
+              "Kunnskapsbasert praksis er å bruke den beste vitenskapelig kunnskap som finnes sammen med pasientenes ønsker og behov og erfaringsbasert kunnskap.",
+          },
+          {
+            question:
+              "Studiedesign som ble valgt i kritisk realistisk etnografisk studie av et fristående jordmorfødestu i East London var:",
+            options: [
+              "En kohortstudie",
+              "En kvalitativ studie",
+              "En annen kontrollert studie",
+              "En tverrsnittstudie",
+            ],
+            correct_answer: "En kvalitativ studie",
+          },
+          {
+            question:
+              "Studiedesignet i studien om effekten av Children's Sexual Health Education Program (CSHEP) på kunnskap og holdning til helsepersonell i grunnskoler var:",
+            options: [
+              "En randomisert studie",
+              "En annen kontrollert studie",
+              "En kvalitativ studie",
+              "En tverrsnittstudie",
+              "En kohortstudie",
+            ],
+            correct_answer: "En randomisert studie",
+          },
+          {
+            question:
+              "Studiedesign som ble valgt i studien om barrierer for helsepersonell i Fayoum, Egypt, når det gjelder screening for partnervold var:",
+            options: [
+              "En kohortstudie",
+              "En kvalitativ studie",
+              "En tverrsnittstudie",
+              "En randomisert studie",
+              "En annen kontrollert studie",
+            ],
+            correct_answer: "En tverrsnittstudie",
+          },
+          {
+            question:
+              "Hvilken problemstilling (aim of the study) var utgangspunkt for metodene og resultatene i studien om mødres psykiske helse ved uledsaget fødsel?",
+            options: [
+              "The study aimed at comparing the outcomes of Caesarean section versus vaginal birth.",
+              "We examined the mental health of mothers after unaccompanied birth",
+              "Aim of the study was to understand how loss of company during birth can affect the mothers' mental health.",
+              "The study aimed at identifying risk factors for Caesarean section in the mental health background of the mothers.",
+            ],
+            correct_answer:
+              "Aim of the study was to understand how loss of company during birth can affect the mothers' mental health.",
+          },
+          {
+            question:
+              "Hvilken problemstilling (aim of the study) var utgangspunkt for metodene og resultatene i studien?",
+            description:
+              "The study's rationale: Women's experiences regarding labour pain preparation and management have been largely neglected.\nAims and objectives:\nMethodological design and justification: The Vancouver School of doing phenomenology was the methodological approach of the study since it provides inside information about the lived experience.\nResearch methods: Data were collected through in-depth interviews with 14 participants; seven primiparous and seven multiparous women.\nResults: The women described a challenging journey of no return through labour pain, with different landmarks on the journey. They described how they prepared for the pain; the context of the pain experience; how they experienced and managed the pain with different strategies and how they saw the pain at the journey's end.",
+            options: [
+              "Explore women's experiences of how midwives manages labour pain in normal childbirth.",
+              "Explore women's experiences of pain relief in normal childbirth.",
+              "Explore women's experiences of how labour pain is focused in childbirth preparation classes.",
+              "Explore women's experiences regarding labour pain preparation and management in normal childbirth.",
+            ],
+            correct_answer:
+              "Explore women's experiences regarding labour pain preparation and management in normal childbirth.",
+          },
+        ],
+      };
+
+      let questions = quizData.questions;
+      let currentQuestionIndex = 0;
+      let userAnswers = [];
+
+      // Initialize the quiz
+      document.getElementById("total-questions").textContent = questions.length;
+      showQuestion();
+
+      function showQuestion() {
+        const question = questions[currentQuestionIndex];
+        const container = document.getElementById("quiz-container");
+
+        let html = `
+                <div class="question-container">
+                    <h3>${question.question}</h3>
+                    <div class="options">
+            `;
+
+        question.options.forEach((option, index) => {
+          const isChecked =
+            userAnswers[currentQuestionIndex] === option ? "checked" : "";
+          const isSelected =
+            userAnswers[currentQuestionIndex] === option ? "selected" : "";
+          html += `
+                    <div class="option ${isSelected}" data-index="${index}">
+                        <input type="radio" name="answer" value="${option}" ${isChecked} id="option${index}">
+                        <label for="option${index}">${option}</label>
+                    </div>
+                `;
+        });
+
+        html += `
+                    </div>
+                    <div id="result" class="result" style="display: none;"></div>
+                </div>
+            `;
+
+        container.innerHTML = html;
+
+        // Add event listeners to radio buttons
+        document.querySelectorAll('input[name="answer"]').forEach((radio) => {
+          radio.addEventListener("change", function () {
+            userAnswers[currentQuestionIndex] = this.value;
+            // Update selected class
+            document
+              .querySelectorAll(".option")
+              .forEach((opt) => opt.classList.remove("selected"));
+            this.parentElement.classList.add("selected");
+            checkAnswer();
+          });
+        });
+
+        // If already selected, highlight it
+        document.querySelectorAll('input[name="answer"]').forEach((radio) => {
+          if (radio.checked) {
+            radio.parentElement.classList.add("selected");
+          }
+        });
+
+        // Update navigation buttons
+        document.getElementById("prev-btn").disabled =
+          currentQuestionIndex === 0;
+        document.getElementById("next-btn").textContent =
+          currentQuestionIndex === questions.length - 1 ? "Finish" : "Next";
+      }
+
+      function checkAnswer() {
+        const result = document.getElementById("result");
+        const selectedAnswer = userAnswers[currentQuestionIndex];
+        const correctAnswer = questions[currentQuestionIndex].correct_answer;
+
+        if (selectedAnswer === correctAnswer) {
+          result.className = "result correct";
+          result.textContent = "Correct!";
+        } else {
+          result.className = "result incorrect";
+          result.textContent = "Incorrect!";
+        }
+        result.style.display = "block";
+      }
+
+      function previousQuestion() {
+        if (currentQuestionIndex > 0) {
+          currentQuestionIndex--;
+          document.getElementById("current-question").textContent =
+            currentQuestionIndex + 1;
+          showQuestion();
+        }
+      }
+
+      function nextQuestion() {
+        if (currentQuestionIndex < questions.length - 1) {
+          currentQuestionIndex++;
+          document.getElementById("current-question").textContent =
+            currentQuestionIndex + 1;
+          showQuestion();
+        } else {
+          showResults();
+        }
+      }
+
+      function showResults() {
+        const score = userAnswers.filter(
+          (answer, index) => answer === questions[index].correct_answer
+        ).length;
+
+        document.getElementById("quiz-container").style.display = "none";
+        document.querySelector(".navigation").style.display = "none";
+        document.getElementById("score-container").style.display = "block";
+        document.getElementById("score").textContent = score;
+        document.getElementById("total").textContent = questions.length;
+      }
+    </script>
+  </body>
+</html>
